@@ -11,7 +11,8 @@ const questionnaireSchema = new mongoose.Schema({
     },
     response_type: {
         type: String,
-        required: true
+        required: true,
+        enum: ['free-response', 'multiple-selection', 'single-selection' ],
     },
     answers: {
         type: String,
@@ -39,7 +40,8 @@ const modulesSchema = new mongoose.Schema(
         },
         moduleNumber: {
             type: String,
-            required: true
+            required: true,
+            enum:['Module 1', 'Module 2', 'Module 3', 'Module 4', 'Module 5']
         },
         questionnaires: [questionnaireSchema],
         ai_evaluation: {

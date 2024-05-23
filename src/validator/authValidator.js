@@ -3,7 +3,7 @@ const Joi = require("joi");
 const register = {
   body: Joi.object().keys({
     firstName: Joi.string(),
-    lastName: Joi.string().allow("", null).optional(),
+    lastName: Joi.string(),
     email: Joi.string().email().required(),
     password: Joi.string().required().description("Password is required"),
   }),
@@ -12,7 +12,7 @@ const register = {
 const socialLogin = {
   body: Joi.object().keys({
     firstName: Joi.string(),
-    lastName: Joi.string().allow("", null).optional(),
+    lastName: Joi.string(),
     email: Joi.string().email().required(),
     accessToken: Joi.string(),
   }),

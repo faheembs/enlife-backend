@@ -7,7 +7,6 @@ const { default: mongoose } = require('mongoose');
 const createOrUpdateModule = catchAsync(async (req, res) => {
     try {
         const { moduleNumber, userId, questionnaires: inputQuestionnaires } = req.body;
-
         if (!moduleNumber || !userId || !inputQuestionnaires) {
             return res.status(400).json({ message: "Missing required fields." });
         }
@@ -65,10 +64,73 @@ const createOrUpdateModule = catchAsync(async (req, res) => {
     }
 });
 
+const getQuestionIdByQuestionText = catchAsync(async (req, res) => {
+    try {
+        const { question, userId, moduleNumber } = req.body
+        if (!question || !userId || !moduleNumber) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "Missing required fields.", true)
+        }
+
+        let module = await ModulesModel.findOne({ user: userId, moduleNumber, questionnaires: { $elemMatch: { question_text: question } } }).select({
+            'questionnaires': { $elemMatch: { question_text: question } }
+        });
+        // .select('questionnaires');
+
+        if (module) {
+            res.status(200).json({
+                data: module.questionnaires[0],
+                success: true
+            });
+        } else {
+            res.status(404).json({
+                message: "Data with this question not found",
+                success: true
+            });
+        }
 
 
+    } catch (error) {
+        console.error('Error creating or updating module:', error);
+        throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Internal server error while updating module.", true);
+    }
+
+
+})
+
+const getAllModulesByUserId = catchAsync(async (req, res) => {
+    try {
+        const { userId } = req.params
+        if (!userId) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "User id is required.", true)
+        }
+
+        let module = await ModulesModel.findOne({ user: userId });
+
+
+        if (module) {
+            res.status(200).json({
+                data: module,
+                success: true
+            });
+        } else {
+            res.status(404).json({
+                message: "This user has no questionnaires",
+                success: true
+            });
+        }
+
+
+    } catch (error) {
+        console.error('Error creating or updating module:', error);
+        throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Internal server error while updating module.", true);
+    }
+
+
+})
 
 
 module.exports = {
-    createOrUpdateModule
+    createOrUpdateModule,
+    getQuestionIdByQuestionText,
+    getAllModulesByUserId
 };

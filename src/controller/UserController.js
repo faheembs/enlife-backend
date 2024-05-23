@@ -8,7 +8,7 @@ const bcrypt = require("bcryptjs");
 const createUser = catchAsync(async (req, res, next) => {
   const { firstName, lastName, email, password } = req.body;
 
-  const isExist = await userService.findUserByEmail(email);
+  const isExist = await userService.findUserByEmail(email.toLowerCase());
 
   if (isExist) {
     throw new ApiError(httpStatus.CONFLICT, "User already exists", true);
@@ -17,7 +17,7 @@ const createUser = catchAsync(async (req, res, next) => {
   const user = await userService.registerUser({
     firstName,
     lastName,
-    email,
+    email: email.toLowerCase(),
     password,
   });
   if (!user)
@@ -38,7 +38,7 @@ const createUser = catchAsync(async (req, res, next) => {
 // LOGIN USER
 const loginUser = catchAsync(async (req, res) => {
   const { email, password } = req.body;
-  const user = await userService.findUserByEmail(email);
+  const user = await userService.findUserByEmail(email.toLowerCase());
 
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found", true);
@@ -61,7 +61,7 @@ const loginUser = catchAsync(async (req, res) => {
 const socialLoginUserSession = catchAsync(async (req, res, next) => {
   const { firstName, lastName, email, accessToken } = req.body;
 
-  const userData = await userService.findUserByEmail(email);
+  const userData = await userService.findUserByEmail(email.toLowerCase());
 
   if (userData) {
     res.json({
@@ -76,7 +76,7 @@ const socialLoginUserSession = catchAsync(async (req, res, next) => {
   const user = await userService.registerUser({
     firstName,
     lastName,
-    email,
+    email: email.toLowerCase(),
     isSocialAuth: true,
   });
   if (!user)
