@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "index"
+    "dev": "nodemon index.js"
   },
   "author": "",
   "license": "ISC",
@@ -20,6 +20,7 @@
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^7.0.3",
     "mongoose-sequence": "^5.3.1",
+    "openai": "^4.47.1",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
