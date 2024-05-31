@@ -8,7 +8,7 @@ const questionnaireSchema = new mongoose.Schema({
   response_type: {
     type: String,
     required: true,
-    enum: ["free-response", "multiple-selection", "single-selection", "scale"],
+    enum: ["free-response", "multiple-selection", "single-selection", "scale", "precursor-question"],
   },
   answers: {
     type: String,
@@ -21,6 +21,11 @@ const questionnaireSchema = new mongoose.Schema({
     default: [],
   },
   scale_value: {
+    type: String,
+    required: false,
+    default: null,
+  },
+  precursor_question: {
     type: String,
     required: false,
     default: null,
