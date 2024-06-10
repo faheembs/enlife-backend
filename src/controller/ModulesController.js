@@ -147,8 +147,6 @@ const getQuestionIdByQuestionText = catchAsync(async (req, res) => {
     }).select({
       questionnaires: { $elemMatch: { question_text: question } },
     });
-    // .select('questionnaires');
-    // console.log(module)
     if (module) {
       res.status(200).json({
         data: module.questionnaires[0],
@@ -227,9 +225,7 @@ const postAssessmentByModuleId = catchAsync(async (req, res) => {
       user: userId,
       moduleNumber: "Module 3",
     });
-    console.log(module.questionnaires.forEach(
-      (q, index) => (console.log(` Answer ${index + 1}: ${q.answers ? q.answers : q.scale_value},`))
-    ))
+
     // const q1 = `Let's visualize this setting: It is very early in the morning, and the day is about to break over the ocean. You're looking at the horizon and thinking about what is most important in your life. You think about what society wants you to be, the ideal people you see in the advertisements, and who your family and friends want you to be. They are not right or wrong. You don't fight with these opinions. You simply accept them as opinions. Thank them and put all of those images aside.Then you focus on what is really important for you. This is your journey and yours alone. You reach deep inside to see what you value most. When you get closer to the things that are important to you, excitement and a sense of urgency fill your heart. Now you remember the things you care about. You would work on these things even when things get tough.
     // What are the things that are most important for you?
     // (For example, being honest, adventurous, fun, hard-working, a leader, keep growing and improving, funny)(please note that being successful, wealthy, happy, etc., are important for most people, but they are generally byproducts of what we do. Not our core values. So here, let's try focusing on values rather than outcomes)`;
@@ -277,7 +273,6 @@ const postAssessmentByModuleId = catchAsync(async (req, res) => {
       // Object.keys(answers).forEach(
       //   (a, index) => (prompt += ` Answer ${index + 1}: ${answers[a]}`)
       // );
-
       prompt += `"""Speak directly to the user.
     
     Format:
@@ -292,7 +287,6 @@ const postAssessmentByModuleId = catchAsync(async (req, res) => {
     Output needs to be in HTML5 code`;
     }
     const response = await completionModal(prompt);
-    console.log(response)
     module.ai_evaluation = {
       response_text:
         removeHtmlTags(response) || module.ai_evaluation.response_text,
@@ -324,7 +318,6 @@ const postAssessmentForModule3 = catchAsync(async (req, res) => {
     //   moduleNumber: moduleId,
     // });
 
-    console.log(selections)
 
 
     let prompt = `Based on the user’s selected roles: ${selections.join(', ')}  recommend three
@@ -355,7 +348,6 @@ const postAssessmentForModule3 = catchAsync(async (req, res) => {
   }] follow this format`;
 
     const response = await completionModal(prompt);
-    console.log(response)
     // module.ai_evaluation = {
     //   response_text:
     //     removeHtmlTags(response) || module.ai_evaluation.response_text,
@@ -377,10 +369,113 @@ const postAssessmentForModule3 = catchAsync(async (req, res) => {
   }
 });
 
+
+const postAssessmentForModule5 = catchAsync(async (req, res) => {
+  try {
+    const { userId, selectedPlan } = req.body;
+
+    let module = await ModulesModel.findOne({
+      user: userId,
+      moduleNumber: "Module 5",
+    });
+    let thirdModule = await ModulesModel.findOne({
+      user: userId,
+      moduleNumber: "Module 3",
+    });
+    let fourthModule = await ModulesModel.findOne({
+      user: userId,
+      moduleNumber: "Module 4",
+    });
+    let prompt = ""
+    if (selectedPlan) {
+      prompt += `Based on the selected Fitness Action Plan: "${selectedPlan}", generates 2-5 tasks (tasks: all the action items necessary to complete the ${selectedPlan}).
+
+     Format will be like this in array of strings ["recomendation1", "recomendation2", "recomendation3", "recomendation4", "recomendation5"], strictly follow this format
+        `
+    } else {
+      prompt += `Based on the`
+      module.questionnaires.forEach(
+        (q, index) => (prompt += ` Qustion ${index + 1}: ${q.question_text},`)
+      );
+
+      `and in
+      reference to the user’s answer to module 3 and 4 question which are:`
+      thirdModule.questionnaires.forEach(
+        (q, index) => (prompt += ` Qustion ${index + 1}: ${q.question_text},`)
+      );
+
+      thirdModule.questionnaires.forEach(
+        (q, index) => (prompt += ` Answer ${index + 1}: ${q.selection},`)
+      );
+
+      prompt += `User selected this fitness identity`
+      prompt += thirdModule.ai_evaluation.response_text
+
+      prompt += `Module 4 Questions and answers are following:`
+      fourthModule.questionnaires.forEach(
+        (q, index) => (prompt += ` Qustion ${index + 1}: ${q.question_text},`)
+      );
+
+      fourthModule.questionnaires.forEach(
+        (q, index) => (prompt += ` Answer ${index + 1}: ${q.answers === null ? q.scale_value : q.answers},`)
+      );
+      prompt += `User selected this fitness journey plan`
+      prompt += fourthModule.ai_evaluation.response_text
+      prompt += `, generate 3 groups of 3, 30-day goal recommendations`;
+
+      prompt += `"""Response should be like [{
+        "30-day goal": [
+            "Recomendation",
+            "Recomendation",
+            "Recomendation",
+        ]
+    }, {
+        "30-day goal": [
+          "Recomendation",
+          "Recomendation",
+          "Recomendation",
+        ]
+    }, {
+        "30-day goal": [
+          "Recomendation",
+          "Recomendation",
+          "Recomendation",
+        ]
+    }] follow this format just return this and dont write anything else `;
+    }
+
+
+
+    const response = await completionModal(prompt);
+
+    // module.ai_evaluation = {
+    //   response_text:
+    //     removeHtmlTags(response) || module.ai_evaluation.response_text,
+    //   response_html: response || module.ai_evaluation.response_html,
+    // };
+
+
+
+
+    res.status(200).json({
+      data: response,
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error creating or updating module:", error);
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Internal server error while updating module.",
+      true
+    );
+  }
+});
+
 module.exports = {
   createOrUpdateModule,
   getQuestionIdByQuestionText,
   getAllModulesByUserId,
   postAssessmentByModuleId,
-  postAssessmentForModule3
+  postAssessmentForModule3,
+  postAssessmentForModule5
 };

@@ -8,5 +8,6 @@ router.get("/:userId", modulesController.getAllModulesByUserId);
 
 router.post("/assessment", modulesController.postAssessmentByModuleId);
 router.post("/assessment-for-module3", modulesController.postAssessmentForModule3);
+router.post("/assessment-for-module5", modulesController.postAssessmentForModule5);
 
 module.exports = router;
