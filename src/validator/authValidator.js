@@ -25,8 +25,17 @@ const login = {
   }),
 };
 
+const updatePassword = {
+  body: Joi.object().keys({
+    email: Joi.string().email().required(),
+    password: Joi.string().required(),
+    newPassword: Joi.string().required(),
+  }),
+};
+
 module.exports = {
   register,
   login,
   socialLogin,
+  updatePassword
 };

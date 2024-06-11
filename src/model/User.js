@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-const { required } = require("joi");
+
 
 const userSchema = new mongoose.Schema(
   {
@@ -16,6 +16,15 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
+      required: false,
+    },
+    gender: {
+      type: String,
+      required: false,
+      enum: ["Male", "Female"]
+    },
+    phoneNumber: {
+      type: Number,
       required: false,
     },
     isSocialAuth: {

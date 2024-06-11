@@ -7,7 +7,7 @@ function ensureAuthenticated(req, res, next) {
     token = req.headers["x-access-token"] || req.headers["authorization"];
   }
   //OAuth 2.0 framework 'bearer' token type
-  if (token.startsWith("Bearer ")) {
+  if (token.startsWith("Bearer")) {
     token = token.slice(7, token.length);
   }
   if (token) {

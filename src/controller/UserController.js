@@ -108,9 +108,47 @@ const getAllUsers = catchAsync(async (req, res) => {
   });
 });
 
+const updatePassword = catchAsync(async (req, res) => {
+  const { email, password, newPassword } = req.body;
+  const user = await userService.findUserByEmail(email.toLowerCase());
+
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found", true);
+  }
+
+  const isPasswordMatch = await bcrypt.compare(password, user.password);
+  if (!isPasswordMatch) {
+    throw new ApiError(httpStatus.UNAUTHORIZED, "Incorrect password", true);
+  }
+
+  user.password = newPassword
+  await user.save()
+  return res.status(httpStatus.OK).send({ message: "Password updated successfully", success: true });
+});
+
+const updateProfile = catchAsync(async (req, res) => {
+  const userId = req.user.id;
+  const profileData = req.body;
+
+  try {
+    const updatedUser = await userService.updateUser(userId, profileData);
+    if (!updatedUser) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+    }
+    const { password: _, ...userData } = updatedUser.toObject();
+    res.status(httpStatus.OK).send({ user: userData, success: true });
+  } catch (error) {
+    throw new ApiError(httpStatus.BAD_REQUEST, error.message);
+  }
+});
+
+
+
 module.exports = {
   loginUser,
   createUser,
   getAllUsers,
   socialLoginUserSession,
+  updatePassword,
+  updateProfile
 };
