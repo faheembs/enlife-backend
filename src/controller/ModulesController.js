@@ -22,7 +22,7 @@ const completionModal = async (prompt, model = default_model) => {
     const completion = await openai.completions.create({
       model: "gpt-3.5-turbo-instruct",
       prompt: prompt,
-      temperature: 0.42,
+      temperature: 0.5,
       max_tokens: 2000,
       top_p: 1,
       frequency_penalty: 0,
@@ -213,6 +213,10 @@ const postAssessmentByModuleId = catchAsync(async (req, res) => {
       user: userId,
       moduleNumber: moduleId,
     });
+    let module1 = await ModulesModel.findOne({
+      user: userId,
+      moduleNumber: "Module 1",
+    });
 
     if (!module) {
       return res.status(404).json({
@@ -254,7 +258,61 @@ const postAssessmentByModuleId = catchAsync(async (req, res) => {
         {
           Fitness journey plan name: [Recommendation 1, Recommendation 2,Recommendation 3],
         }]} follow thi format `;
-    } else {
+    } else if (moduleId === "Module 2") {
+      prompt = `Based on the user's responses to the purpose assessment
+and identified core values:`
+      module1.questionnaires.forEach(
+        (q, index) => (prompt += ` Answer ${index + 1}: ${q.answers ? q.answers : q.scale_value},`)
+      );
+      prompt += `please analyze and define their purpose in
+life. The purpose should 1) serve as a long-term aim rather
+than a specific, achievable goal, 2) focus on impacts beyond
+just the individual, and 3) be personally meaningful to the
+respondent. Include the content and underlying themes from
+the answers provided:`;
+      // module1.questionnaires.forEach(
+      //   (q, index) => {
+      const { response_text } = module1.ai_evaluation;
+
+      if (response_text) {
+        const coreValues = response_text.match(/·\s*([^:]*):\s*([^·]*)/g);
+        if (coreValues) {
+          coreValues.forEach((text, i) => {
+            const match = text.match(/·\s*([^:]*):\s*([^]*)/);
+            if (match) {
+              const [_, heading, textPart] = match;
+              const label = `Core Value ${i + 1}/${textPart.trim().split(" ")[0]
+                }`;
+              return prompt += label
+            }
+          });
+        }
+      }
+      //   }
+      // );
+      `""" User's answers:"""`;
+
+      module.questionnaires.forEach(
+        (q, index) => (prompt += ` Answer ${index + 1}: ${q.answers ? q.answers : q.scale_value},`)
+      );
+      prompt += `Speak directly to the user. I need the response Format:
+▪make this bold=>Your purpose in life is: Detailed Definition of Purpose
+(Adhering to the criteria above)
+▪Explanation:
+● Alignment with Core Value 1 *core value 1*,: Explain
+how this purpose aligns with the first core value.
+● Alignment with Core Value 2 *core value 2*, Explain
+how this purpose aligns with the second core value.
+● Alignment with Core Value 3 *core value 3*: Explain
+how this purpose aligns with the third core value.
+
+▪make this bold=>Meaningfulness: Discuss why this purpose is personally
+meaningful to the respondent and how it satisfies the criteria
+of being a long-term aim and focusing beyond self. 
+And the response should be in html and all the styling for bold will be in html css`
+
+    }
+    else {
       prompt = `Analyze the user's answers and context provided to identify their top 3 core values in order of importance. Include explanations and suggest additional values if applicable. Core values and definitions: 
 
 
@@ -274,8 +332,7 @@ const postAssessmentByModuleId = catchAsync(async (req, res) => {
       //   (a, index) => (prompt += ` Answer ${index + 1}: ${answers[a]}`)
       // );
       prompt += `"""Speak directly to the user.
-    
-    Format:
+    This will be the format :
     Your three core values are: Core Value 1, Core Value 2, Core Value 3 (in
     order of importance/relevance)
     · Core Value 1: Explanation for Core Value 1.
@@ -283,10 +340,13 @@ const postAssessmentByModuleId = catchAsync(async (req, res) => {
     · Core Value 3: Explanation for Core Value 3
          
     Additional applicable core values: Core Value 4, Core Value
-    
-    Output needs to be in HTML5 code`;
+    only generate 3 core value not more than that
+    response should be in HTML`;
+      // generate response in HTML including all heading tags and all other necessary tags and dont use h1 tag and make it precise and to the point
     }
+    console.log(prompt)
     const response = await completionModal(prompt);
+    console.log(response)
     module.ai_evaluation = {
       response_text:
         removeHtmlTags(response) || module.ai_evaluation.response_text,
@@ -448,11 +508,14 @@ const postAssessmentForModule5 = catchAsync(async (req, res) => {
 
     const response = await completionModal(prompt);
 
-    // module.ai_evaluation = {
-    //   response_text:
-    //     removeHtmlTags(response) || module.ai_evaluation.response_text,
-    //   response_html: response || module.ai_evaluation.response_html,
-    // };
+    if (selectedPlan) {
+
+      module.ai_evaluation = {
+        response_text:
+          removeHtmlTags(response) || module.ai_evaluation.response_text,
+        response_html: response || module.ai_evaluation.response_html,
+      };
+    }
 
 
 

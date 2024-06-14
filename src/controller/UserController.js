@@ -108,22 +108,37 @@ const getAllUsers = catchAsync(async (req, res) => {
   });
 });
 
-const updatePassword = catchAsync(async (req, res) => {
-  const { email, password, newPassword } = req.body;
+const updateEmailOrPassword = catchAsync(async (req, res) => {
+  const { email, password, newPassword, newEmail } = req.body;
+  console.log(email, password, newPassword, newEmail)
   const user = await userService.findUserByEmail(email.toLowerCase());
+
+
 
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found", true);
   }
 
-  const isPasswordMatch = await bcrypt.compare(password, user.password);
-  if (!isPasswordMatch) {
-    throw new ApiError(httpStatus.UNAUTHORIZED, "Incorrect password", true);
+  if (password && password !== undefined) {
+    const isPasswordMatch = await bcrypt.compare(password, user.password);
+    if (!isPasswordMatch) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, "Incorrect password", true);
+    }
+  }
+  if (newEmail && newEmail !== undefined) {
+    const existingUser = await userService.findUserByEmail(newEmail.toLowerCase());
+    if (existingUser) {
+      throw new ApiError(httpStatus.CONFLICT, "Email already in use", true);
+    }
+    user.email = newEmail.toLowerCase();
+  }
+  if (newPassword && newPassword !== undefined) {
+    user.password = newPassword
   }
 
-  user.password = newPassword
   await user.save()
-  return res.status(httpStatus.OK).send({ message: "Password updated successfully", success: true });
+  const { password: _, ...userData } = user.toObject()
+  return res.status(httpStatus.OK).send({ user: userData, message: "Account settings updated successfully", success: true });
 });
 
 const updateProfile = catchAsync(async (req, res) => {
@@ -149,6 +164,6 @@ module.exports = {
   createUser,
   getAllUsers,
   socialLoginUserSession,
-  updatePassword,
+  updateEmailOrPassword,
   updateProfile
 };

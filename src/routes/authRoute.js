@@ -22,7 +22,7 @@ router
 
 router
   .route("/update-password")
-  .post(validatorMiddleware(authValidator.updatePassword), userController.updatePassword);
+  .post(validatorMiddleware(authValidator.updatePassword), userController.updateEmailOrPassword);
 
 router
   .route("/profile")
