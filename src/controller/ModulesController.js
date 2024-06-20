@@ -28,7 +28,8 @@ const completionModal = async (prompt, model = default_model) => {
       frequency_penalty: 0,
       presence_penalty: 0,
     });
-
+    // console.log(completion)
+    // completionModal(prompt + "jkejkd")
     return completion?.choices[0]?.text;
   } catch (err) {
     return err;
@@ -296,20 +297,29 @@ the answers provided:`;
         (q, index) => (prompt += ` Answer ${index + 1}: ${q.answers ? q.answers : q.scale_value},`)
       );
       prompt += `Speak directly to the user. I need the response Format:
-▪make this bold=>Your purpose in life is: Detailed Definition of Purpose
+<h4>Your purpose in life is:</h4> Detailed Definition of Purpose
 (Adhering to the criteria above)
-▪Explanation:
-● Alignment with Core Value 1 *core value 1*,: Explain
+<br/>
+<h4>Explanation </h4>
+<ul>
+<li>
+Alignment with Core Value 1 *core value 1*,: Explain
 how this purpose aligns with the first core value.
-● Alignment with Core Value 2 *core value 2*, Explain
+</li>
+<li>
+Alignment with Core Value 2 *core value 2*, Explain
 how this purpose aligns with the second core value.
-● Alignment with Core Value 3 *core value 3*: Explain
+</li>
+<li>
+Alignment with Core Value 3 *core value 3*: Explain
 how this purpose aligns with the third core value.
+</li>
+</ul>
 
 ▪make this bold=>Meaningfulness: Discuss why this purpose is personally
-meaningful to the respondent and how it satisfies the criteria
+meaningful to the respondent(dont use me,I) and how it satisfies the criteria
 of being a long-term aim and focusing beyond self. 
-And the response should be in html and all the styling for bold will be in html css`
+And the RESPONSE SHOULD BE IN HTML and all the styling for bold will be in html css`
 
     }
     else {
@@ -331,22 +341,31 @@ And the response should be in html and all the styling for bold will be in html 
       // Object.keys(answers).forEach(
       //   (a, index) => (prompt += ` Answer ${index + 1}: ${answers[a]}`)
       // );
-      prompt += `"""Speak directly to the user.
+      prompt += `"""Speak directly to the user and tell them.
     This will be the format :
-    Your three core values are: Core Value 1, Core Value 2, Core Value 3 (in
+    <h4>Your three core values are:</h4> Core Value 1, Core Value 2, Core Value 3 (in
     order of importance/relevance)
-    · Core Value 1: Explanation for Core Value 1.
-    · Core Value 2: Explanation for Core Value 2.
-    · Core Value 3: Explanation for Core Value 3
-         
+    <ul>
+    <li>
+    Core Value 1: Explanation for Core Value 1.
+    </li>
+    <li>
+    Core Value 2: Explanation for Core Value 2.
+    </li>
+    <li>
+    Core Value 3: Explanation for Core Value 3
+    </li>
+    </ul>
     Additional applicable core values: Core Value 4, Core Value
     only generate 3 core value not more than that
-    response should be in HTML`;
+    response should be in HTML and dont include the word "format"`;
       // generate response in HTML including all heading tags and all other necessary tags and dont use h1 tag and make it precise and to the point
     }
-    console.log(prompt)
+    // console.log(prompt)
+
     const response = await completionModal(prompt);
-    console.log(response)
+
+    // console.log(response)
     module.ai_evaluation = {
       response_text:
         removeHtmlTags(response) || module.ai_evaluation.response_text,
