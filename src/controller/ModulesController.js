@@ -249,7 +249,7 @@ const postAssessmentByModuleId = catchAsync(async (req, res) => {
       module.questionnaires.forEach(
         (q, index) => (prompt += ` Answer ${index + 1}: ${q.answers ? q.answers : q.scale_value},`)
       );
-      prompt += `""" Speak directly to the user. I need the response to be array of objects {[
+      prompt += `""" Speak directly to the user. I need the response to be array of objects and dont add numbers before recomandation as i will handle it myself {[
         {
           Fitness journey plan name: [Recommendation 1, Recommendation 2,Recommendation 3],
         },
@@ -258,7 +258,7 @@ const postAssessmentByModuleId = catchAsync(async (req, res) => {
         },
         {
           Fitness journey plan name: [Recommendation 1, Recommendation 2,Recommendation 3],
-        }]} follow thi format `;
+        }]} follow this format `;
     } else if (moduleId === "Module 2") {
       prompt = `Based on the user's responses to the purpose assessment
 and identified core values:`
@@ -364,18 +364,19 @@ And the RESPONSE SHOULD BE IN HTML and all the styling for bold will be in html 
     // console.log(prompt)
 
     const response = await completionModal(prompt);
-
+    const cleanedResponse = response.replace(/\d+\.\s/g, '');
     // console.log(response)
+
     module.ai_evaluation = {
-      response_text:
-        removeHtmlTags(response) || module.ai_evaluation.response_text,
-      response_html: response || module.ai_evaluation.response_html,
+      response_text: moduleId !== "Module 4" ?
+        removeHtmlTags(response) || module.ai_evaluation.response_text : cleanedResponse,
+      response_html: moduleId !== "Module 4" ? response || module.ai_evaluation.response_html : cleanedResponse,
     };
 
     await module.save();
 
     res.status(200).json({
-      data: response,
+      data: moduleId !== "Module 4" ? response : cleanedResponse,
       success: true,
     });
   } catch (error) {
@@ -399,32 +400,14 @@ const postAssessmentForModule3 = catchAsync(async (req, res) => {
 
 
 
-    let prompt = `Based on the user’s selected roles: ${selections.join(', ')}  recommend three
-    personalized long-term fitness goals for each role. These
+    let prompt = `Based on the user’s selected roles: ${selections.join(', ')}  recommend one
+    personalized long-term fitness goal for each role. These
     should be inspiring and challenging objectives that align with
-    the user’s seleted Core Values and Purpose`;
+    the user’s selected Core Values and Purpose`;
 
 
 
-    prompt += `"""Response should be like [{
-      "Swimming Enthusiast": [
-          "Participate in a triathlon within the next year",
-          "Swim a mile without stopping",
-          "Master the butterfly stroke"
-      ]
-  }, {
-      "Outdoor Adventurer": [
-          "Complete a multi-day hiking trip",
-          "Climb a mountain over 10,000 feet",
-          "Learn to rock climb"
-      ]
-  }, {
-      "Nutrition Advocate": [
-          "Complete a Whole30 challenge",
-          "Become a certified nutrition coach",
-          "Create and publish a healthy cookbook"
-      ]
-  }] follow this format`;
+    prompt += `"""follow this format and dont add ignore the spaces [{"Entrepreneur": "An entrepreneur who creates impactful businesses that provide education and job opportunities in underprivileged communities"},{"Mentor/Coach": "A mentor/coach who empowers individuals to pursue their passions and achieve their full potential through guidance and support."},{"Innovator/Creator": "An innovator/creator who develops sustainable solutions that promote a better future for the environment and society"}] `;
 
     const response = await completionModal(prompt);
     // module.ai_evaluation = {
@@ -432,10 +415,14 @@ const postAssessmentForModule3 = catchAsync(async (req, res) => {
     //     removeHtmlTags(response) || module.ai_evaluation.response_text,
     //   response_html: response || module.ai_evaluation.response_html,
     // };
+    const responseString = typeof response === 'string' ? response : JSON.stringify(response);
 
+    // Trim the response string to remove spaces before and after the array
+    const trimmedResponse = responseString.trim();
 
+    console.log(trimmedResponse);
     res.status(200).json({
-      data: response,
+      data: trimmedResponse,
       success: true,
     });
   } catch (error) {
