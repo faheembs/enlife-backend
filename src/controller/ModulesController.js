@@ -205,7 +205,6 @@ const removeHtmlTags = (input) => {
   }
   return input.replace(/<\/?[^>]+(>|$)/g, "");
 };
-
 const postAssessmentByModuleId = catchAsync(async (req, res) => {
   try {
     const { moduleId, userId } = req.body;
@@ -540,11 +539,52 @@ const postAssessmentForModule5 = catchAsync(async (req, res) => {
   }
 });
 
+const getMaxModulesByUserId = catchAsync(async (req, res) => {
+  try {
+    const { userId } = req.params;
+    if (!userId) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "User id is required.", true);
+    }
+
+    let modules = await ModulesModel.find({ user: userId });
+
+    if (modules && modules.length > 0) {
+      const maxModuleNumber = modules.reduce((max, module) => {
+        const moduleNumber = parseInt(module.moduleNumber.split(" ")[1]);
+        return Math.max(max, moduleNumber);
+      }, 0);
+      let lastQuestion
+      const maxQuestions = await ModulesModel.find({ user: userId, moduleNumber: `Module ${maxModuleNumber}` });
+      if (maxQuestions) {
+        lastQuestion = maxQuestions[0].questionnaires.length
+      }
+      // console.log(maxQuestions)
+      res.status(200).json({
+        data: { maxModuleNumber, lastQuestion },
+        success: true,
+      });
+
+    } else {
+      res.status(404).json({
+        message: "This user has no modules",
+        success: false,
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching max module number:", error);
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Internal server error while fetching max module number.",
+      true
+    );
+  }
+});
 module.exports = {
   createOrUpdateModule,
   getQuestionIdByQuestionText,
   getAllModulesByUserId,
   postAssessmentByModuleId,
   postAssessmentForModule3,
-  postAssessmentForModule5
+  postAssessmentForModule5,
+  getMaxModulesByUserId
 };

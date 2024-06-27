@@ -5,6 +5,7 @@ const { modulesController } = require("../controller");
 router.post("/", modulesController.createOrUpdateModule);
 router.post("/get-questionId", modulesController.getQuestionIdByQuestionText);
 router.get("/:userId", modulesController.getAllModulesByUserId);
+router.get("/max/:userId", modulesController.getMaxModulesByUserId);
 
 router.post("/assessment", modulesController.postAssessmentByModuleId);
 router.post("/assessment-for-module3", modulesController.postAssessmentForModule3);
