@@ -6,6 +6,8 @@ router.post("/", modulesController.createOrUpdateModule);
 router.post("/get-questionId", modulesController.getQuestionIdByQuestionText);
 router.get("/:userId", modulesController.getAllModulesByUserId);
 router.get("/max/:userId", modulesController.getMaxModulesByUserId);
+router.get("/moudle1-evaluation/:userId", modulesController.getModule1Evaluation);
+
 
 router.post("/assessment", modulesController.postAssessmentByModuleId);
 router.post("/assessment-for-module3", modulesController.postAssessmentForModule3);

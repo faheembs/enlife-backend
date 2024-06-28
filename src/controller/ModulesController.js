@@ -217,7 +217,10 @@ const postAssessmentByModuleId = catchAsync(async (req, res) => {
       user: userId,
       moduleNumber: "Module 1",
     });
-
+    let module2 = await ModulesModel.findOne({
+      user: userId,
+      moduleNumber: "Module 2",
+    });
     if (!module) {
       return res.status(404).json({
         data: null,
@@ -235,28 +238,66 @@ const postAssessmentByModuleId = catchAsync(async (req, res) => {
     // (For example, being honest, adventurous, fun, hard-working, a leader, keep growing and improving, funny)(please note that being successful, wealthy, happy, etc., are important for most people, but they are generally byproducts of what we do. Not our core values. So here, let's try focusing on values rather than outcomes)`;
     let prompt
     if (moduleId === "Module 4") {
-      prompt = ` Based on the user’s answer to Parts 1,2 and 3, please
-      recommend three specific, actionable 90-day goals. These
-      goals should be challenging yet achievable, helping the user
-      advance towards their desired selected fitness identity  ${selectedFitness.ai_evaluation.response_text}
-      User Asked this question as below """`;
-      module.questionnaires.forEach(
-        (q, index) => (prompt += ` Qustion ${index + 1}: ${q.question_text},`)
+      prompt = `Based on the user’s answer to Parts 1,2 and 3, which are following `
+      prompt += ` Questions fot part 1 and their answers`
+      module1.questionnaires.forEach(
+        (q, index) => (prompt += ` 
+          Qustion ${index + 1}: ${q.question_text},`)
       );
-      `""" User's answers:"""`;
+      module1.questionnaires.forEach(
+        (q, index) => (prompt += ` 
+          Answer ${index + 1}: ${q.answers},`)
+      );
+      prompt += ` Questions fot part 2 and their answers`
+
+      module2.questionnaires.forEach(
+        (q, index) => (prompt += ` 
+          Qustion ${index + 1}: ${q.question_text},`)
+      );
+
+      module2.questionnaires.forEach(
+        (q, index) => (prompt += ` 
+          Answer ${index + 1}: ${q.answers},`)
+      );
+      prompt += ` Questions fot part 3 and their answers`
+
+      selectedFitness.questionnaires.forEach(
+        (q, index) => (prompt += ` 
+          Qustion ${index + 1}: ${q.question_text},`)
+      );
+
+      selectedFitness.questionnaires.forEach(
+        (q, index) => (prompt += ` 
+          Answer ${index + 1}: ${q.selection},`)
+      );
+
+      prompt += `
+      User was asked this question in part 4  as below """`;
+      module.questionnaires.forEach(
+        (q, index) => (prompt += ` 
+          Qustion ${index + 1}: ${q.question_text},`)
+      );
+      prompt += `""" User's answers:"""`;
 
       module.questionnaires.forEach(
-        (q, index) => (prompt += ` Answer ${index + 1}: ${q.answers ? q.answers : q.scale_value},`)
+        (q, index) => (prompt += ` 
+          Answer ${index + 1}: ${q.answers ? q.answers : q.scale_value},`)
       );
-      prompt += `""" Speak directly to the user. I need the response to be array of objects and dont add numbers before recomandation as i will handle it myself {[
+      prompt += `
+      please recommend three specific, actionable 90-day goals. These
+      goals should be challenging yet achievable, helping the user
+      advance towards their desired selected identity  ${selectedFitness.ai_evaluation.response_text}`;
+
+      prompt += `""" Speak directly to the user. I need the response to be array of objects and strictly follow this format please 
+      {[
         {
-          Fitness journey plan name: [Recommendation 1, Recommendation 2,Recommendation 3],
+          "Fitness journey plan name": ['Become a product manager to learn the full product development cycle."]
         },
         {
-          Fitness journey plan name: [Recommendation 1, Recommendation 2,Recommendation 3],
+          "Fitness journey plan name": ["Develop a strong network of industry professionals and potential mentors."]
         },
         {
-          Fitness journey plan name: [Recommendation 1, Recommendation 2,Recommendation 3],
+          "Fitness journey plan name": ["Acquire foundational business management skills through targeted learning and experience."]
         }]} follow this format `;
     } else if (moduleId === "Module 2") {
       prompt = `Based on the user's responses to the purpose assessment
@@ -364,12 +405,12 @@ And the RESPONSE SHOULD BE IN HTML and all the styling for bold will be in html 
 
     const response = await completionModal(prompt);
     const cleanedResponse = response.replace(/\d+\.\s/g, '');
-    // console.log(response)
+    // console.log(cleanedResponse)
 
     module.ai_evaluation = {
       response_text: moduleId !== "Module 4" ?
-        removeHtmlTags(response) || module.ai_evaluation.response_text : cleanedResponse,
-      response_html: moduleId !== "Module 4" ? response || module.ai_evaluation.response_html : cleanedResponse,
+        removeHtmlTags(response) || module.ai_evaluation.response_text : cleanedResponse.trim(),
+      response_html: moduleId !== "Module 4" ? response || module.ai_evaluation.response_html : cleanedResponse.trim(),
     };
 
     await module.save();
@@ -419,7 +460,7 @@ const postAssessmentForModule3 = catchAsync(async (req, res) => {
     // Trim the response string to remove spaces before and after the array
     const trimmedResponse = responseString.trim();
 
-    console.log(trimmedResponse);
+    // console.log(trimmedResponse);
     res.status(200).json({
       data: trimmedResponse,
       success: true,
@@ -466,25 +507,29 @@ const postAssessmentForModule5 = catchAsync(async (req, res) => {
       `and in
       reference to the user’s answer to module 3 and 4 question which are:`
       thirdModule.questionnaires.forEach(
-        (q, index) => (prompt += ` Qustion ${index + 1}: ${q.question_text},`)
+        (q, index) => (prompt += ` 
+          Qustion ${index + 1}: ${q.question_text},`)
       );
 
       thirdModule.questionnaires.forEach(
-        (q, index) => (prompt += ` Answer ${index + 1}: ${q.selection},`)
+        (q, index) => (prompt += ` 
+          Answer ${index + 1}: ${q.selection},`)
       );
 
-      prompt += `User selected this fitness identity`
+      prompt += `User selected this identity`
       prompt += thirdModule.ai_evaluation.response_text
 
       prompt += `Module 4 Questions and answers are following:`
       fourthModule.questionnaires.forEach(
-        (q, index) => (prompt += ` Qustion ${index + 1}: ${q.question_text},`)
+        (q, index) => (prompt += ` 
+          Qustion ${index + 1}: ${q.question_text},`)
       );
 
       fourthModule.questionnaires.forEach(
-        (q, index) => (prompt += ` Answer ${index + 1}: ${q.answers === null ? q.scale_value : q.answers},`)
+        (q, index) => (prompt += ` 
+          Answer ${index + 1}: ${q.answers === null ? q.scale_value : q.answers},`)
       );
-      prompt += `User selected this fitness journey plan`
+      prompt += `User selected this journey plan`
       prompt += fourthModule.ai_evaluation.response_text
       prompt += `, generate 3 groups of 3, 30-day goal recommendations`;
 
@@ -492,19 +537,19 @@ const postAssessmentForModule5 = catchAsync(async (req, res) => {
         "30-day goal": [
             "Recomendation",
             "Recomendation",
-            "Recomendation",
+            "Recomendation"
         ]
     }, {
         "30-day goal": [
           "Recomendation",
           "Recomendation",
-          "Recomendation",
+          "Recomendation"
         ]
     }, {
         "30-day goal": [
           "Recomendation",
           "Recomendation",
-          "Recomendation",
+          "Recomendation"
         ]
     }] follow this format just return this and dont write anything else `;
     }
@@ -540,7 +585,9 @@ const postAssessmentForModule5 = catchAsync(async (req, res) => {
 });
 
 const getMaxModulesByUserId = catchAsync(async (req, res) => {
+
   try {
+
     const { userId } = req.params;
     if (!userId) {
       throw new ApiError(httpStatus.BAD_REQUEST, "User id is required.", true);
@@ -579,6 +626,84 @@ const getMaxModulesByUserId = catchAsync(async (req, res) => {
     );
   }
 });
+const extractCoreValues = (text) => {
+  const coreValues = {};
+  const bulletPoints = text.split('·');
+
+  bulletPoints.forEach((point) => {
+    const parts = point.split(':');
+    if (parts.length === 2) {
+      const key = parts[0].trim();
+      const value = parts[1].trim();
+      coreValues[key] = value;
+    }
+  });
+
+  return coreValues;
+};
+const getModule1Evaluation = catchAsync(async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ message: "Missing userId." });
+    }
+
+    // Find Module 1
+    const module1 = await ModulesModel.findOne({
+      user: userId,
+      moduleNumber: "Module 1",
+    });
+
+    if (!module1) {
+      return res.status(404).json({
+        message: "Module 1 not found.",
+        success: false,
+      });
+    }
+
+    // Extract core values and their explanations from ai_evaluation.response_text
+    const responseText = module1.ai_evaluation.response_text;
+
+    // Split the response text into lines
+    const lines = responseText.split('\n');
+
+    // Initialize an empty object to store core values and their explanations
+    const coreValuesObject = {};
+
+    // Loop through each line and extract core values and explanations
+    let currentCoreValue = '';
+    for (let line of lines) {
+      line = line.trim();
+      if (line.startsWith('Core Value')) {
+        // Extract the core value name
+        currentCoreValue = line.split(':')[1].trim();
+        coreValuesObject[currentCoreValue] = '';
+      } else if (currentCoreValue) {
+        // Append the explanation to the current core value
+        coreValuesObject[currentCoreValue] += ' ' + line;
+      }
+    }
+
+    // Convert the coreValuesObject to the desired array format
+    const coreValuesArray = Object.entries(coreValuesObject).map(([key, value]) => {
+      const [coreValue, explanation] = key.split(' - ');
+      return { [coreValue.trim()]: explanation.trim() + value.trim() };
+    });
+
+    res.status(200).json({
+      coreValues: coreValuesArray,
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error finding Module 1 and converting response text:", error);
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Internal server error while processing Module 1.",
+      true
+    );
+  }
+});
 module.exports = {
   createOrUpdateModule,
   getQuestionIdByQuestionText,
@@ -586,5 +711,6 @@ module.exports = {
   postAssessmentByModuleId,
   postAssessmentForModule3,
   postAssessmentForModule5,
-  getMaxModulesByUserId
+  getMaxModulesByUserId,
+  getModule1Evaluation
 };
