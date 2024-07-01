@@ -284,9 +284,7 @@ const postAssessmentByModuleId = catchAsync(async (req, res) => {
           Answer ${index + 1}: ${q.answers ? q.answers : q.scale_value},`)
       );
       prompt += `
-      please recommend three specific, actionable 90-day goals. These
-      goals should be challenging yet achievable, helping the user
-      advance towards their desired selected identity  ${selectedFitness.ai_evaluation.response_text}`;
+      please recommend three specific, actionable 90-day goals. These goals should be challenging yet achievable, helping the user advance towards their desired selected identity  ${selectedFitness.ai_evaluation.response_text}`;
 
       prompt += `""" Speak directly to the user. I need the response to be array of objects and strictly follow this format please 
       {[
@@ -408,12 +406,14 @@ And the RESPONSE SHOULD BE IN HTML and all the styling for bold will be in html 
     // console.log(cleanedResponse)
 
     module.ai_evaluation = {
-      response_text: moduleId !== "Module 4" ?
-        removeHtmlTags(response) || module.ai_evaluation.response_text : cleanedResponse.trim(),
-      response_html: moduleId !== "Module 4" ? response || module.ai_evaluation.response_html : cleanedResponse.trim(),
+      response_text: moduleId !== "Module 4" &&
+        removeHtmlTags(response) || module.ai_evaluation.response_text,
+      response_html: moduleId !== "Module 4" && response || module.ai_evaluation.response_html,
     };
 
-    await module.save();
+    if (moduleId !== "Module 4") {
+      await module.save();
+    }
 
     res.status(200).json({
       data: moduleId !== "Module 4" ? response : cleanedResponse,
@@ -495,8 +495,7 @@ const postAssessmentForModule5 = catchAsync(async (req, res) => {
     let prompt = ""
     if (selectedPlan) {
       prompt += `Based on the selected Fitness Action Plan: "${selectedPlan}", generates 2-5 tasks (tasks: all the action items necessary to complete the ${selectedPlan}).
-
-     Format will be like this in array of strings ["recomendation1", "recomendation2", "recomendation3", "recomendation4", "recomendation5"], strictly follow this format
+Format will be like this in array of strings ["recomendation1", "recomendation2", "recomendation3", "recomendation4", "recomendation5"], strictly follow this format
         `
     } else {
       prompt += `Based on the`
@@ -504,8 +503,7 @@ const postAssessmentForModule5 = catchAsync(async (req, res) => {
         (q, index) => (prompt += ` Qustion ${index + 1}: ${q.question_text},`)
       );
 
-      `and in
-      reference to the user’s answer to module 3 and 4 question which are:`
+      `and in reference to the user’s answer to module 3 and 4 question which are:`
       thirdModule.questionnaires.forEach(
         (q, index) => (prompt += ` 
           Qustion ${index + 1}: ${q.question_text},`)
@@ -571,7 +569,7 @@ const postAssessmentForModule5 = catchAsync(async (req, res) => {
 
 
     res.status(200).json({
-      data: response,
+      data: response.replace(/[\n0-9.]/g, '').replace(/\s+$/, ''),
       success: true,
     });
   } catch (error) {
@@ -704,6 +702,36 @@ const getModule1Evaluation = catchAsync(async (req, res) => {
     );
   }
 });
+
+const regenarateResponse = catchAsync(async (req, res) => {
+  try {
+
+    const { text, prompts } = req.body
+
+    let prompt = `Enhance this response and dont just change the words, replace this with new suggested goal but use this context and refine it :  
+    ${text}`
+    if (prompts) {
+      prompt += prompts
+    }
+
+    console.log(prompt)
+    const response = await completionModal(prompt);
+
+    res.status(200).json({
+      data: response.replace(/,/g, '').replace(/\s*"\s*/g, ''),
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error :", error);
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Internal server error while regenerating response!",
+      true
+    );
+  }
+});
+
+
 module.exports = {
   createOrUpdateModule,
   getQuestionIdByQuestionText,
@@ -712,5 +740,6 @@ module.exports = {
   postAssessmentForModule3,
   postAssessmentForModule5,
   getMaxModulesByUserId,
-  getModule1Evaluation
+  getModule1Evaluation,
+  regenarateResponse
 };
