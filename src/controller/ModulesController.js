@@ -23,7 +23,7 @@ const completionModal = async (prompt, model = default_model) => {
       model: "gpt-3.5-turbo-instruct",
       prompt: prompt,
       temperature: 0.5,
-      max_tokens: 2000,
+      max_tokens: 1500,
       top_p: 1,
       frequency_penalty: 0,
       presence_penalty: 0,
@@ -242,24 +242,24 @@ const postAssessmentByModuleId = catchAsync(async (req, res) => {
       prompt += ` Questions fot part 1 and their answers`
       module1.questionnaires.forEach(
         (q, index) => (prompt += ` 
-          Qustion ${index + 1}: ${q.question_text},`)
+          Qustion ${index + 1}: ${q.question_text.trim()},`)
       );
       module1.questionnaires.forEach(
         (q, index) => (prompt += ` 
-          Answer ${index + 1}: ${q.answers},`)
+          Answer ${index + 1}: ${q.answers.trim()},`)
       );
       prompt += ` Questions fot part 2 and their answers`
 
       module2.questionnaires.forEach(
         (q, index) => (prompt += ` 
-          Qustion ${index + 1}: ${q.question_text},`)
+          Qustion ${index + 1}: ${q.question_text.trim()},`)
       );
 
       module2.questionnaires.forEach(
         (q, index) => (prompt += ` 
-          Answer ${index + 1}: ${q.answers},`)
+          Answer ${index + 1}: ${q.answers.trim()},`)
       );
-      prompt += ` Questions fot part 3 and their answers`
+      prompt += ` Questions for part 3 and their answers`
 
       selectedFitness.questionnaires.forEach(
         (q, index) => (prompt += ` 
@@ -272,12 +272,12 @@ const postAssessmentByModuleId = catchAsync(async (req, res) => {
       );
 
       prompt += `
-      User was asked this question in part 4  as below """`;
+      User was asked this question in part 4  as below`;
       module.questionnaires.forEach(
         (q, index) => (prompt += ` 
           Qustion ${index + 1}: ${q.question_text},`)
       );
-      prompt += `""" User's answers:"""`;
+      prompt += `User's answers:`;
 
       module.questionnaires.forEach(
         (q, index) => (prompt += ` 
@@ -286,17 +286,17 @@ const postAssessmentByModuleId = catchAsync(async (req, res) => {
       prompt += `
       please recommend three specific, actionable 90-day goals. These goals should be challenging yet achievable, helping the user advance towards their desired selected identity  ${selectedFitness.ai_evaluation.response_text}`;
 
-      prompt += `""" Speak directly to the user. I need the response to be array of objects and strictly follow this format please 
+      prompt += `""" Speak directly to the user. I need the response to be array of objects, key should be "Fitness journey plan name" same for every object and strictly follow this format please 
       {[
         {
-          "Fitness journey plan name": ['Become a product manager to learn the full product development cycle."]
+          "Fitness journey plan name": ['Become a product manager..."]
         },
         {
-          "Fitness journey plan name": ["Develop a strong network of industry professionals and potential mentors."]
+          "Fitness journey plan name": ["Develop a strong network of..."]
         },
         {
-          "Fitness journey plan name": ["Acquire foundational business management skills through targeted learning and experience."]
-        }]} follow this format `;
+          "Fitness journey plan name": ["Acquire foundational business management..."]
+        }]} follow this format`;
     } else if (moduleId === "Module 2") {
       prompt = `Based on the user's responses to the purpose assessment
 and identified core values:`
@@ -402,7 +402,7 @@ And the RESPONSE SHOULD BE IN HTML and all the styling for bold will be in html 
     // console.log(prompt)
 
     const response = await completionModal(prompt);
-    const cleanedResponse = response.replace(/\d+\.\s/g, '');
+    const cleanedResponse = response;
     // console.log(cleanedResponse)
 
     module.ai_evaluation = {
@@ -441,13 +441,13 @@ const postAssessmentForModule3 = catchAsync(async (req, res) => {
 
 
     let prompt = `Based on the user’s selected roles: ${selections.join(', ')}  recommend one
-    personalized long-term fitness goal for each role. These
+    personalized long-term  goal for each role. These
     should be inspiring and challenging objectives that align with
-    the user’s selected Core Values and Purpose`;
+    the user’s selected Core Values and Purpose. Make it short.`;
 
 
 
-    prompt += `"""follow this format and dont add ignore the spaces [{"Entrepreneur": "An entrepreneur who creates impactful businesses that provide education and job opportunities in underprivileged communities"},{"Mentor/Coach": "A mentor/coach who empowers individuals to pursue their passions and achieve their full potential through guidance and support."},{"Innovator/Creator": "An innovator/creator who develops sustainable solutions that promote a better future for the environment and society"}] `;
+    prompt += `"""follow this format and dont add ignore the spaces [{"Entrepreneur": "An "Role" who creates impactful businesses that provide education and job opportunities in underprivileged communities"},{"Mentor/Coach": "A"Role" who empowers individuals to pursue their passions and achieve their full potential through guidance and support."},{"Innovator/Creator": "An "Role" who develops sustainable solutions that promote a better future for the environment and society"}] `;
 
     const response = await completionModal(prompt);
     // module.ai_evaluation = {
@@ -495,7 +495,7 @@ const postAssessmentForModule5 = catchAsync(async (req, res) => {
     let prompt = ""
     if (selectedPlan) {
       prompt += `Based on the selected Fitness Action Plan: "${selectedPlan}", generates 2-5 tasks (tasks: all the action items necessary to complete the ${selectedPlan}).
-Format will be like this in array of strings ["recomendation1", "recomendation2", "recomendation3", "recomendation4", "recomendation5"], strictly follow this format
+Response Format should be array of strings like this ["recomendation1", "recomendation2", "recomendation3", "recomendation4", "recomendation5"] strictly follow this format
         `
     } else {
       prompt += `Based on the`
@@ -529,7 +529,7 @@ Format will be like this in array of strings ["recomendation1", "recomendation2"
       );
       prompt += `User selected this journey plan`
       prompt += fourthModule.ai_evaluation.response_text
-      prompt += `, generate 3 groups of 3, 30-day goal recommendations`;
+      prompt += `,generate 3 groups of 3, 30-day goal recommendations`;
 
       prompt += `"""Response should be like [{
         "30-day goal": [
@@ -555,7 +555,7 @@ Format will be like this in array of strings ["recomendation1", "recomendation2"
 
 
     const response = await completionModal(prompt);
-
+    // console.log(selectedPlan ? response : "")
     if (selectedPlan) {
 
       module.ai_evaluation = {
@@ -565,11 +565,11 @@ Format will be like this in array of strings ["recomendation1", "recomendation2"
       };
     }
 
-
+    // console.log(JSON.parse(response))
 
 
     res.status(200).json({
-      data: response.replace(/[\n0-9.]/g, '').replace(/\s+$/, ''),
+      data: selectedPlan ? response.replace(/[\n0-9.]/g, '').replace(/\s+$/, '') : response.replace(/\s+$/, ''),
       success: true,
     });
   } catch (error) {
@@ -714,7 +714,7 @@ const regenarateResponse = catchAsync(async (req, res) => {
       prompt += prompts
     }
 
-    console.log(prompt)
+    // console.log(prompt)
     const response = await completionModal(prompt);
 
     res.status(200).json({
