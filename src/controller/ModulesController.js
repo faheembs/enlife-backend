@@ -23,7 +23,7 @@ const completionModal = async (prompt, model = default_model) => {
       model: "gpt-3.5-turbo-instruct",
       prompt: prompt,
       temperature: 0.5,
-      max_tokens: 1500,
+      max_tokens: 1000,
       top_p: 1,
       frequency_penalty: 0,
       presence_penalty: 0,
@@ -494,9 +494,10 @@ const postAssessmentForModule5 = catchAsync(async (req, res) => {
     });
     let prompt = ""
     if (selectedPlan) {
-      prompt += `Based on the selected Fitness Action Plan: "${selectedPlan}", generates 2-5 tasks (tasks: all the action items necessary to complete the ${selectedPlan}).
-Response Format should be array of strings like this ["recomendation1", "recomendation2", "recomendation3", "recomendation4", "recomendation5"] strictly follow this format
-        `
+      prompt += ` Based on the selected Fitness Action Plan: "${selectedPlan}", generate 2-5 tasks (tasks: all the action items necessary to complete the ${selectedPlan}). 
+Response Format: an array of strings. For example, ["recommendation1", "recommendation2", "recommendation3", "recommendation4", "recommendation5"]. 
+Ensure the output strictly follows this format `
+
     } else {
       prompt += `Based on the`
       module.questionnaires.forEach(
@@ -565,7 +566,7 @@ Response Format should be array of strings like this ["recomendation1", "recomen
       };
     }
 
-    // console.log(JSON.parse(response))
+    console.log(response)
 
 
     res.status(200).json({
@@ -708,10 +709,10 @@ const regenarateResponse = catchAsync(async (req, res) => {
 
     const { text, prompts } = req.body
 
-    let prompt = `Enhance this response and dont just change the words, replace this with new suggested goal but use this context and refine it :  
-    ${text}`
+    let prompt = `Enhance the response using the context below, refining it with a new suggestion without just changing words:
+${text}`
     if (prompts) {
-      prompt += prompts
+      prompt += `${prompts}`
     }
 
     // console.log(prompt)
