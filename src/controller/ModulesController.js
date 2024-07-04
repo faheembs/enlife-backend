@@ -205,6 +205,21 @@ const removeHtmlTags = (input) => {
   }
   return input.replace(/<\/?[^>]+(>|$)/g, "");
 };
+const cleanResponse = (response) => {
+  try {
+    const parsedData = JSON.parse(response.trim());
+
+    const cleanedData = parsedData.map(item => {
+      const key = Object.keys(item)[0];
+      return { [key]: item[key] };
+    });
+
+    return cleanedData
+  } catch (error) {
+    // console.error("Failed to parse data:", error);
+    return []
+  }
+};
 const postAssessmentByModuleId = catchAsync(async (req, res) => {
   try {
     const { moduleId, userId } = req.body;
@@ -401,8 +416,12 @@ And the RESPONSE SHOULD BE IN HTML and all the styling for bold will be in html 
     }
     // console.log(prompt)
 
-    const response = await completionModal(prompt);
-    const cleanedResponse = response;
+    let response = await completionModal(prompt);
+    let cleanedResponse = cleanResponse(response);
+    if (cleanedResponse.length < 1) {
+      response = await completionModal(prompt);
+      cleanedResponse = cleanResponse(response);
+    }
     // console.log(cleanedResponse)
 
     module.ai_evaluation = {
@@ -566,7 +585,7 @@ Ensure the output strictly follows this format `
       };
     }
 
-    console.log(response)
+    // console.log(response)
 
 
     res.status(200).json({
@@ -648,7 +667,6 @@ const getModule1Evaluation = catchAsync(async (req, res) => {
       return res.status(400).json({ message: "Missing userId." });
     }
 
-    // Find Module 1
     const module1 = await ModulesModel.findOne({
       user: userId,
       moduleNumber: "Module 1",
@@ -661,35 +679,26 @@ const getModule1Evaluation = catchAsync(async (req, res) => {
       });
     }
 
-    // Extract core values and their explanations from ai_evaluation.response_text
-    const responseText = module1.ai_evaluation.response_text;
+    const responseText = module1.ai_evaluation.response_html;
+    // console.log(module1.ai_evaluation.response_html)
+    const lines = responseText.replace('Your three core values are', '').split('\n');
 
-    // Split the response text into lines
-    const lines = responseText.split('\n');
-
-    // Initialize an empty object to store core values and their explanations
     const coreValuesObject = {};
-
-    // Loop through each line and extract core values and explanations
     let currentCoreValue = '';
+
     for (let line of lines) {
       line = line.trim();
-      if (line.startsWith('Core Value')) {
-        // Extract the core value name
-        currentCoreValue = line.split(':')[1].trim();
-        coreValuesObject[currentCoreValue] = '';
+
+      if (line.match(/^[a-zA-Z\s]*:/)) {
+        currentCoreValue = line.split(':')[0].trim();
+        coreValuesObject[currentCoreValue] = removeHtmlTags(line.split(':')[1].trim());
       } else if (currentCoreValue) {
-        // Append the explanation to the current core value
         coreValuesObject[currentCoreValue] += ' ' + line;
       }
     }
-
-    // Convert the coreValuesObject to the desired array format
     const coreValuesArray = Object.entries(coreValuesObject).map(([key, value]) => {
-      const [coreValue, explanation] = key.split(' - ');
-      return { [coreValue.trim()]: explanation.trim() + value.trim() };
+      return { [key.trim()]: removeHtmlTags(value.trim()) };
     });
-
     res.status(200).json({
       coreValues: coreValuesArray,
       success: true,
