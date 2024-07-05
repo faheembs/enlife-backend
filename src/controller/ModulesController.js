@@ -28,7 +28,7 @@ const completionModal = async (prompt, model = default_model) => {
       frequency_penalty: 0,
       presence_penalty: 0,
     });
-    console.log(completion)
+    // console.log(completion)
     // completionModal(prompt + "jkejkd")
     return completion?.choices[0]?.text;
   } catch (err) {
@@ -671,6 +671,15 @@ const extractCoreValues = (text) => {
 
   return coreValues;
 };
+const extractListContent = (htmlString) => {
+  const ulRegex = /<ul>([\s\S]*?)<\/ul>/;
+  const match = ulRegex.exec(htmlString);
+  if (match) {
+    return match[1];
+  } else {
+    return null;
+  }
+};
 const getModule1Evaluation = catchAsync(async (req, res) => {
   try {
     const { userId } = req.params;
@@ -691,44 +700,21 @@ const getModule1Evaluation = catchAsync(async (req, res) => {
       });
     }
 
-    const responseText = module1.ai_evaluation.response_html;
-    console.log(module1.ai_evaluation.response_html);
-
-    const coreValuesArray = [];
-
-    // Regular expressions to extract core values and explanations
-    const regexList = [
-      /<li>\s*Core Value \d+: (\w+)\. (.*?)(?=<\/li>)/gs,  // Case with "Core Value X:"
-      /<li>\s*(\w+)\. (.*?)(?=<\/li>)/gs,                  // Case without "Core Value X:"
-      /<li>\s*(\w+) This (.*?)(?=<\/li>)/gs                // Case with value directly mentioned without period
-    ];
-
-    // Loop through the regex list and apply each regex to the input string
-    for (const regex of regexList) {
-      let match;
-      while ((match = regex.exec(responseText)) !== null) {
-        const coreValue = match[1];
-        const explanation = match[2].trim();
-        coreValuesArray.push({ [coreValue]: explanation });
-      }
-    }
-
-    console.log(coreValuesArray);
+    const listContent = extractListContent(module1.ai_evaluation.response_html);
+    let prompt = ` Format the following core values and their explanations IN ARRAY OF OBJECTS, it should not have any spaces: [{"coreValue":"","explanation":""},{"coreValue":"","explanation":""},{"coreValue":"","explanation":""}] ${listContent}`
+    const format = await completionModal(prompt)
 
     res.status(200).json({
-      coreValues: coreValuesArray,
+      coreValues: JSON.parse(format.replace(/\\/g, '').replace(/\n/g, '').replace(/\bcoreValue\s*:/g, 'coreValue:').replace(/\bexplanation\s*:/g, 'explanation:').replace(/\[\s*/g, '[').replace(/\s*\]/g, ']').replace(/\{\s*/g, '{').replace(/\s*\}/g, '}').replace(/\s+/g, ' ')),
       success: true,
     });
   } catch (error) {
-    console.error(
-      "Error finding Module 1 and converting response text:",
-      error
-    );
-    throw new ApiError(
-      httpStatus.INTERNAL_SERVER_ERROR,
-      "Internal server error while processing Module 1.",
-      true
-    );
+    // console.log(error)
+    res.status(500).json({
+      data: [],
+      message: "Internal server error",
+      success: false,
+    });
   }
 });
 
@@ -762,7 +748,7 @@ const formatData = async (string) => {
   try {
     let prompt = `Convert the following string into an array of objects where each word is an object with a key "word" and the value is the word itself.\nString: "${str}"\nOutput:`
     const response = await completionModal(prompt)
-    console.log(response)
+    // console.log(response)
     return response;
   } catch (error) {
     return [];
