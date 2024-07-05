@@ -23,12 +23,12 @@ const completionModal = async (prompt, model = default_model) => {
       model: "gpt-3.5-turbo-instruct",
       prompt: prompt,
       temperature: 0.5,
-      max_tokens: 1000,
+      max_tokens: 2000,
       top_p: 1,
       frequency_penalty: 0,
       presence_penalty: 0,
     });
-    // console.log(completion)
+    console.log(completion)
     // completionModal(prompt + "jkejkd")
     return completion?.choices[0]?.text;
   } catch (err) {
@@ -42,13 +42,11 @@ const createOrUpdateModule = catchAsync(async (req, res) => {
       moduleNumber,
       userId,
       questionnaires: inputQuestionnaires,
-      ai_evaluation
+      ai_evaluation,
     } = req.body;
     if (!moduleNumber || !userId || !inputQuestionnaires) {
       return res.status(400).json({ message: "Missing required fields." });
     }
-
-
 
     const questionnaires = Array.isArray(inputQuestionnaires)
       ? inputQuestionnaires
@@ -65,12 +63,14 @@ const createOrUpdateModule = catchAsync(async (req, res) => {
     }
 
     let updatesNeeded = false;
-    if (ai_evaluation && ai_evaluation !== module.ai_evaluation && moduleNumber !== "Module 3") {
+    if (
+      ai_evaluation &&
+      ai_evaluation !== module.ai_evaluation &&
+      moduleNumber !== "Module 3"
+    ) {
       module.ai_evaluation = ai_evaluation;
       updatesNeeded = true;
-
     } else {
-
       questionnaires.forEach((newQuestionnaire) => {
         if (!newQuestionnaire.questionID) {
           newQuestionnaire.questionID = new mongoose.Types.ObjectId();
@@ -109,7 +109,6 @@ const createOrUpdateModule = catchAsync(async (req, res) => {
     if (ai_evaluation && ai_evaluation !== module.ai_evaluation) {
       module.ai_evaluation = ai_evaluation;
       updatesNeeded = true;
-
     }
     if (updatesNeeded) {
       const updatedModule = await module.save();
@@ -209,15 +208,15 @@ const cleanResponse = (response) => {
   try {
     const parsedData = JSON.parse(response.trim());
 
-    const cleanedData = parsedData.map(item => {
+    const cleanedData = parsedData.map((item) => {
       const key = Object.keys(item)[0];
       return { [key]: item[key] };
     });
 
-    return cleanedData
+    return cleanedData;
   } catch (error) {
     // console.error("Failed to parse data:", error);
-    return []
+    return [];
   }
 };
 const postAssessmentByModuleId = catchAsync(async (req, res) => {
@@ -251,51 +250,59 @@ const postAssessmentByModuleId = catchAsync(async (req, res) => {
     // const q1 = `Let's visualize this setting: It is very early in the morning, and the day is about to break over the ocean. You're looking at the horizon and thinking about what is most important in your life. You think about what society wants you to be, the ideal people you see in the advertisements, and who your family and friends want you to be. They are not right or wrong. You don't fight with these opinions. You simply accept them as opinions. Thank them and put all of those images aside.Then you focus on what is really important for you. This is your journey and yours alone. You reach deep inside to see what you value most. When you get closer to the things that are important to you, excitement and a sense of urgency fill your heart. Now you remember the things you care about. You would work on these things even when things get tough.
     // What are the things that are most important for you?
     // (For example, being honest, adventurous, fun, hard-working, a leader, keep growing and improving, funny)(please note that being successful, wealthy, happy, etc., are important for most people, but they are generally byproducts of what we do. Not our core values. So here, let's try focusing on values rather than outcomes)`;
-    let prompt
+    let prompt;
     if (moduleId === "Module 4") {
-      prompt = `Based on the user’s answer to Parts 1,2 and 3, which are following `
-      prompt += ` Questions fot part 1 and their answers`
+      prompt = `Based on the user’s answer to Parts 1,2 and 3, which are following `;
+      prompt += ` Questions fot part 1 and their answers`;
       module1.questionnaires.forEach(
-        (q, index) => (prompt += ` 
+        (q, index) =>
+        (prompt += ` 
           Qustion ${index + 1}: ${q.question_text.trim()},`)
       );
       module1.questionnaires.forEach(
-        (q, index) => (prompt += ` 
+        (q, index) =>
+        (prompt += ` 
           Answer ${index + 1}: ${q.answers.trim()},`)
       );
-      prompt += ` Questions fot part 2 and their answers`
+      prompt += ` Questions fot part 2 and their answers`;
 
       module2.questionnaires.forEach(
-        (q, index) => (prompt += ` 
+        (q, index) =>
+        (prompt += ` 
           Qustion ${index + 1}: ${q.question_text.trim()},`)
       );
 
       module2.questionnaires.forEach(
-        (q, index) => (prompt += ` 
+        (q, index) =>
+        (prompt += ` 
           Answer ${index + 1}: ${q.answers.trim()},`)
       );
-      prompt += ` Questions for part 3 and their answers`
+      prompt += ` Questions for part 3 and their answers`;
 
       selectedFitness.questionnaires.forEach(
-        (q, index) => (prompt += ` 
+        (q, index) =>
+        (prompt += ` 
           Qustion ${index + 1}: ${q.question_text},`)
       );
 
       selectedFitness.questionnaires.forEach(
-        (q, index) => (prompt += ` 
+        (q, index) =>
+        (prompt += ` 
           Answer ${index + 1}: ${q.selection},`)
       );
 
       prompt += `
       User was asked this question in part 4  as below`;
       module.questionnaires.forEach(
-        (q, index) => (prompt += ` 
+        (q, index) =>
+        (prompt += ` 
           Qustion ${index + 1}: ${q.question_text},`)
       );
       prompt += `User's answers:`;
 
       module.questionnaires.forEach(
-        (q, index) => (prompt += ` 
+        (q, index) =>
+        (prompt += ` 
           Answer ${index + 1}: ${q.answers ? q.answers : q.scale_value},`)
       );
       prompt += `
@@ -314,9 +321,11 @@ const postAssessmentByModuleId = catchAsync(async (req, res) => {
         }]} follow this format`;
     } else if (moduleId === "Module 2") {
       prompt = `Based on the user's responses to the purpose assessment
-and identified core values:`
+and identified core values:`;
       module1.questionnaires.forEach(
-        (q, index) => (prompt += ` Answer ${index + 1}: ${q.answers ? q.answers : q.scale_value},`)
+        (q, index) =>
+        (prompt += ` Answer ${index + 1}: ${q.answers ? q.answers : q.scale_value
+          },`)
       );
       prompt += `please analyze and define their purpose in
 life. The purpose should 1) serve as a long-term aim rather
@@ -337,7 +346,7 @@ the answers provided:`;
               const [_, heading, textPart] = match;
               const label = `Core Value ${i + 1}/${textPart.trim().split(" ")[0]
                 }`;
-              return prompt += label
+              return (prompt += label);
             }
           });
         }
@@ -347,7 +356,9 @@ the answers provided:`;
       `""" User's answers:"""`;
 
       module.questionnaires.forEach(
-        (q, index) => (prompt += ` Answer ${index + 1}: ${q.answers ? q.answers : q.scale_value},`)
+        (q, index) =>
+        (prompt += ` Answer ${index + 1}: ${q.answers ? q.answers : q.scale_value
+          },`)
       );
       prompt += `Speak directly to the user. I need the response Format:
 <h4>Your purpose in life is:</h4> Detailed Definition of Purpose
@@ -372,10 +383,8 @@ how this purpose aligns with the third core value.
 ▪make this bold=>Meaningfulness: Discuss why this purpose is personally
 meaningful to the respondent(dont use me,I) and how it satisfies the criteria
 of being a long-term aim and focusing beyond self. 
-And the RESPONSE SHOULD BE IN HTML and all the styling for bold will be in html css`
-
-    }
-    else {
+And the RESPONSE SHOULD BE IN HTML and all the styling for bold will be in html css`;
+    } else {
       prompt = `Analyze the user's answers and context provided to identify their top 3 core values in order of importance. Include explanations and suggest additional values if applicable. Core values and definitions: 
 
 
@@ -425,9 +434,12 @@ And the RESPONSE SHOULD BE IN HTML and all the styling for bold will be in html 
     // console.log(cleanedResponse)
 
     module.ai_evaluation = {
-      response_text: moduleId !== "Module 4" &&
-        removeHtmlTags(response) || module.ai_evaluation.response_text,
-      response_html: moduleId !== "Module 4" && response || module.ai_evaluation.response_html,
+      response_text:
+        (moduleId !== "Module 4" && removeHtmlTags(response)) ||
+        module.ai_evaluation.response_text,
+      response_html:
+        (moduleId !== "Module 4" && response) ||
+        module.ai_evaluation.response_html,
     };
 
     if (moduleId !== "Module 4") {
@@ -457,14 +469,12 @@ const postAssessmentForModule3 = catchAsync(async (req, res) => {
     //   moduleNumber: moduleId,
     // });
 
-
-
-    let prompt = `Based on the user’s selected roles: ${selections.join(', ')}  recommend one
+    let prompt = `Based on the user’s selected roles: ${selections.join(
+      ", "
+    )}  recommend one
     personalized long-term  goal for each role. These
     should be inspiring and challenging objectives that align with
     the user’s selected Core Values and Purpose. Make it short.`;
-
-
 
     prompt += `"""follow this format and dont add ignore the spaces [{"Entrepreneur": "An "Role" who creates impactful businesses that provide education and job opportunities in underprivileged communities"},{"Mentor/Coach": "A"Role" who empowers individuals to pursue their passions and achieve their full potential through guidance and support."},{"Innovator/Creator": "An "Role" who develops sustainable solutions that promote a better future for the environment and society"}] `;
 
@@ -474,7 +484,8 @@ const postAssessmentForModule3 = catchAsync(async (req, res) => {
     //     removeHtmlTags(response) || module.ai_evaluation.response_text,
     //   response_html: response || module.ai_evaluation.response_html,
     // };
-    const responseString = typeof response === 'string' ? response : JSON.stringify(response);
+    const responseString =
+      typeof response === "string" ? response : JSON.stringify(response);
 
     // Trim the response string to remove spaces before and after the array
     const trimmedResponse = responseString.trim();
@@ -494,7 +505,6 @@ const postAssessmentForModule3 = catchAsync(async (req, res) => {
   }
 });
 
-
 const postAssessmentForModule5 = catchAsync(async (req, res) => {
   try {
     const { userId, selectedPlan } = req.body;
@@ -511,44 +521,48 @@ const postAssessmentForModule5 = catchAsync(async (req, res) => {
       user: userId,
       moduleNumber: "Module 4",
     });
-    let prompt = ""
+    let prompt = "";
     if (selectedPlan) {
       prompt += ` Based on the selected Fitness Action Plan: "${selectedPlan}", generate 2-5 tasks (tasks: all the action items necessary to complete the ${selectedPlan}). 
 Response Format: an array of strings. For example, ["recommendation1", "recommendation2", "recommendation3", "recommendation4", "recommendation5"]. 
-Ensure the output strictly follows this format `
-
+Ensure the output strictly follows this format `;
     } else {
-      prompt += `Based on the`
+      prompt += `Based on the`;
       module.questionnaires.forEach(
         (q, index) => (prompt += ` Qustion ${index + 1}: ${q.question_text},`)
       );
 
-      `and in reference to the user’s answer to module 3 and 4 question which are:`
+      `and in reference to the user’s answer to module 3 and 4 question which are:`;
       thirdModule.questionnaires.forEach(
-        (q, index) => (prompt += ` 
+        (q, index) =>
+        (prompt += ` 
           Qustion ${index + 1}: ${q.question_text},`)
       );
 
       thirdModule.questionnaires.forEach(
-        (q, index) => (prompt += ` 
+        (q, index) =>
+        (prompt += ` 
           Answer ${index + 1}: ${q.selection},`)
       );
 
-      prompt += `User selected this identity`
-      prompt += thirdModule.ai_evaluation.response_text
+      prompt += `User selected this identity`;
+      prompt += thirdModule.ai_evaluation.response_text;
 
-      prompt += `Module 4 Questions and answers are following:`
+      prompt += `Module 4 Questions and answers are following:`;
       fourthModule.questionnaires.forEach(
-        (q, index) => (prompt += ` 
+        (q, index) =>
+        (prompt += ` 
           Qustion ${index + 1}: ${q.question_text},`)
       );
 
       fourthModule.questionnaires.forEach(
-        (q, index) => (prompt += ` 
-          Answer ${index + 1}: ${q.answers === null ? q.scale_value : q.answers},`)
+        (q, index) =>
+        (prompt += ` 
+          Answer ${index + 1}: ${q.answers === null ? q.scale_value : q.answers
+          },`)
       );
-      prompt += `User selected this journey plan`
-      prompt += fourthModule.ai_evaluation.response_text
+      prompt += `User selected this journey plan`;
+      prompt += fourthModule.ai_evaluation.response_text;
       prompt += `,generate 3 groups of 3, 30-day goal recommendations`;
 
       prompt += `"""Response should be like [{
@@ -572,12 +586,9 @@ Ensure the output strictly follows this format `
     }] follow this format just return this and dont write anything else `;
     }
 
-
-
     const response = await completionModal(prompt);
     // console.log(selectedPlan ? response : "")
     if (selectedPlan) {
-
       module.ai_evaluation = {
         response_text:
           removeHtmlTags(response) || module.ai_evaluation.response_text,
@@ -587,9 +598,10 @@ Ensure the output strictly follows this format `
 
     // console.log(response)
 
-
     res.status(200).json({
-      data: selectedPlan ? response.replace(/[\n0-9.]/g, '').replace(/\s+$/, '') : response.replace(/\s+$/, ''),
+      data: selectedPlan
+        ? response.replace(/[\n0-9.]/g, "").replace(/\s+$/, "")
+        : response.replace(/\s+$/, ""),
       success: true,
     });
   } catch (error) {
@@ -603,9 +615,7 @@ Ensure the output strictly follows this format `
 });
 
 const getMaxModulesByUserId = catchAsync(async (req, res) => {
-
   try {
-
     const { userId } = req.params;
     if (!userId) {
       throw new ApiError(httpStatus.BAD_REQUEST, "User id is required.", true);
@@ -618,17 +628,19 @@ const getMaxModulesByUserId = catchAsync(async (req, res) => {
         const moduleNumber = parseInt(module.moduleNumber.split(" ")[1]);
         return Math.max(max, moduleNumber);
       }, 0);
-      let lastQuestion
-      const maxQuestions = await ModulesModel.find({ user: userId, moduleNumber: `Module ${maxModuleNumber}` });
+      let lastQuestion;
+      const maxQuestions = await ModulesModel.find({
+        user: userId,
+        moduleNumber: `Module ${maxModuleNumber}`,
+      });
       if (maxQuestions) {
-        lastQuestion = maxQuestions[0].questionnaires.length
+        lastQuestion = maxQuestions[0].questionnaires.length;
       }
       // console.log(maxQuestions)
       res.status(200).json({
         data: { maxModuleNumber, lastQuestion },
         success: true,
       });
-
     } else {
       res.status(404).json({
         message: "This user has no modules",
@@ -646,10 +658,10 @@ const getMaxModulesByUserId = catchAsync(async (req, res) => {
 });
 const extractCoreValues = (text) => {
   const coreValues = {};
-  const bulletPoints = text.split('·');
+  const bulletPoints = text.split("·");
 
   bulletPoints.forEach((point) => {
-    const parts = point.split(':');
+    const parts = point.split(":");
     if (parts.length === 2) {
       const key = parts[0].trim();
       const value = parts[1].trim();
@@ -680,31 +692,38 @@ const getModule1Evaluation = catchAsync(async (req, res) => {
     }
 
     const responseText = module1.ai_evaluation.response_html;
-    // console.log(module1.ai_evaluation.response_html)
-    const lines = responseText.replace('Your three core values are', '').split('\n');
+    console.log(module1.ai_evaluation.response_html);
 
-    const coreValuesObject = {};
-    let currentCoreValue = '';
+    const coreValuesArray = [];
 
-    for (let line of lines) {
-      line = line.trim();
+    // Regular expressions to extract core values and explanations
+    const regexList = [
+      /<li>\s*Core Value \d+: (\w+)\. (.*?)(?=<\/li>)/gs,  // Case with "Core Value X:"
+      /<li>\s*(\w+)\. (.*?)(?=<\/li>)/gs,                  // Case without "Core Value X:"
+      /<li>\s*(\w+) This (.*?)(?=<\/li>)/gs                // Case with value directly mentioned without period
+    ];
 
-      if (line.match(/^[a-zA-Z\s]*:/)) {
-        currentCoreValue = line.split(':')[0].trim();
-        coreValuesObject[currentCoreValue] = removeHtmlTags(line.split(':')[1].trim());
-      } else if (currentCoreValue) {
-        coreValuesObject[currentCoreValue] += ' ' + line;
+    // Loop through the regex list and apply each regex to the input string
+    for (const regex of regexList) {
+      let match;
+      while ((match = regex.exec(responseText)) !== null) {
+        const coreValue = match[1];
+        const explanation = match[2].trim();
+        coreValuesArray.push({ [coreValue]: explanation });
       }
     }
-    const coreValuesArray = Object.entries(coreValuesObject).map(([key, value]) => {
-      return { [key.trim()]: removeHtmlTags(value.trim()) };
-    });
+
+    console.log(coreValuesArray);
+
     res.status(200).json({
       coreValues: coreValuesArray,
       success: true,
     });
   } catch (error) {
-    console.error("Error finding Module 1 and converting response text:", error);
+    console.error(
+      "Error finding Module 1 and converting response text:",
+      error
+    );
     throw new ApiError(
       httpStatus.INTERNAL_SERVER_ERROR,
       "Internal server error while processing Module 1.",
@@ -715,20 +734,19 @@ const getModule1Evaluation = catchAsync(async (req, res) => {
 
 const regenarateResponse = catchAsync(async (req, res) => {
   try {
-
-    const { text, prompts } = req.body
+    const { text, prompts } = req.body;
 
     let prompt = `Enhance the response using the context below, refining it with a new suggestion without just changing words:
-${text}`
+${text}`;
     if (prompts) {
-      prompt += `${prompts}`
+      prompt += `${prompts}`;
     }
 
     // console.log(prompt)
     const response = await completionModal(prompt);
 
     res.status(200).json({
-      data: response.replace(/,/g, '').replace(/\s*"\s*/g, ''),
+      data: response.replace(/,/g, "").replace(/\s*"\s*/g, ""),
       success: true,
     });
   } catch (error) {
@@ -740,8 +758,16 @@ ${text}`
     );
   }
 });
-
-
+const formatData = async (string) => {
+  try {
+    let prompt = `Convert the following string into an array of objects where each word is an object with a key "word" and the value is the word itself.\nString: "${str}"\nOutput:`
+    const response = await completionModal(prompt)
+    console.log(response)
+    return response;
+  } catch (error) {
+    return [];
+  }
+};
 module.exports = {
   createOrUpdateModule,
   getQuestionIdByQuestionText,
@@ -751,5 +777,5 @@ module.exports = {
   postAssessmentForModule5,
   getMaxModulesByUserId,
   getModule1Evaluation,
-  regenarateResponse
+  regenarateResponse,
 };
