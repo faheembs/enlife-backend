@@ -6,7 +6,7 @@ const { default: mongoose } = require("mongoose");
 
 const { default: OpenAI } = require("openai");
 
-const default_model = "gpt-3.5-turbo";
+const default_model = "gpt-3.5-turbo-16k";
 
 // const configuration = Configuration({
 //   organization: process.env.OPENAI_ORG_ID,
@@ -33,6 +33,24 @@ const completionModal = async (prompt, model = default_model) => {
     return completion?.choices[0]?.text;
   } catch (err) {
     return err;
+  }
+};
+
+const chatModal = async (prompt, model = default_model) => {
+  try {
+    const completion = await openai.chat.completions.create({
+      model: model,
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.3,
+      max_tokens: 2000,
+      top_p: 1,
+      frequency_penalty: 0,
+      presence_penalty: 0,
+    });
+    console.log("chat", completion);
+    return completion.choices[0].message.content
+  } catch (err) {
+    console.error("Error in chatModal: ", err.response ? err.response.data : err.message);
   }
 };
 
@@ -424,14 +442,28 @@ And the RESPONSE SHOULD BE IN HTML and all the styling for bold will be in html 
       // generate response in HTML including all heading tags and all other necessary tags and dont use h1 tag and make it precise and to the point
     }
     // console.log(prompt)
-
-    let response = await completionModal(prompt);
-    let cleanedResponse = cleanResponse(response);
-    if (cleanedResponse.length < 1) {
-      response = await completionModal(prompt);
+    let response
+    let cleanedResponse
+    console.log(moduleId)
+    if (moduleId === "Module 4") {
+      response = await chatModal(prompt);
+      console.log("1", response)
       cleanedResponse = cleanResponse(response);
+      if (cleanedResponse.length < 1) {
+        response = await chatModal(prompt);
+        cleanedResponse = cleanResponse(response);
+      }
+    } else {
+
+      response = await completionModal(prompt);
+      console.log("2", response)
+      cleanedResponse = cleanResponse(response);
+      if (cleanedResponse.length < 1) {
+        response = await completionModal(prompt);
+        cleanedResponse = cleanResponse(response);
+      }
+      // console.log(cleanedResponse)
     }
-    // console.log(cleanedResponse)
 
     module.ai_evaluation = {
       response_text:
@@ -586,7 +618,7 @@ Ensure the output strictly follows this format `;
     }] follow this format just return this and dont write anything else `;
     }
 
-    const response = await completionModal(prompt);
+    const response = await chatModal(prompt);
     // console.log(selectedPlan ? response : "")
     if (selectedPlan) {
       module.ai_evaluation = {
@@ -729,7 +761,7 @@ ${text}`;
     }
 
     // console.log(prompt)
-    const response = await completionModal(prompt);
+    const response = await chatModal(prompt);
 
     res.status(200).json({
       data: response.replace(/,/g, "").replace(/\s*"\s*/g, ""),
